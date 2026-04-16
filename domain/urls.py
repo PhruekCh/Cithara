@@ -6,6 +6,8 @@ from domain.views import (
     ListenerViewSet,
     LibraryViewSet,
     SongViewSet,
+    GenerateSongView,
+    GenerationStatusView,
 )
 
 router = DefaultRouter()
@@ -16,4 +18,10 @@ router.register(r'songs', SongViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('generate/', GenerateSongView.as_view(), name='generate-song'),
+    path(
+        'generate/<str:task_id>/status/',
+        GenerationStatusView.as_view(),
+        name='generation-status',
+    ),
 ]

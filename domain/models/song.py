@@ -20,6 +20,11 @@ class Song(models.Model):
     genre          = models.CharField(max_length=20, choices=Genre.choices)
     mood           = models.CharField(max_length=20, choices=Mood.choices)
     occasion       = models.CharField(max_length=20, choices=Occasion.choices)
+    audio_url      = models.URLField(
+        blank=True,
+        null=True,
+        help_text="URL of the generated audio file.",
+    )
     date_generated = models.DateTimeField(auto_now_add=True)
     is_deleted     = models.BooleanField(
         default=False,
