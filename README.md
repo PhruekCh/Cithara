@@ -19,6 +19,19 @@ CRUD test: http://127.0.0.1:8000/api/creators/
 Cithara uses the **Strategy design pattern** to support interchangeable song-generation behaviors.
 The active strategy is selected via a single environment variable — no code changes needed.
 
+### Quick Demonstration
+
+You can quickly run a complete standalone demonstration of both modes without needing to start the Django server or use `curl`:
+
+```bash
+# Run Mock mode demonstration
+python demo_generation.py mock
+
+# Run Suno mode demonstration (requires SUNO_API_KEY in .env)
+python demo_generation.py suno
+```
+(See `demo_output.md` for example output).
+
 ### Architecture
 
 ```
