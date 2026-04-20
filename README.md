@@ -122,15 +122,27 @@ Mock mode returns `SUCCESS` immediately with placeholder audio URLs.
 
 ### Usage Example: Creating a Library
 
-To use the `/api/generate/` endpoint, you must first have a `Library` to store the generated songs. Because a `Library` has a 1-to-1 relationship with a `Creator`, you must pass an existing creator's ID:
+To use the `/api/generate/` endpoint, you must first have a `Library` to store the generated songs. Because a `Library` has a 1-to-1 relationship with a `Creator`, you must pass an existing creator's ID.
 
+> **⚠️ Windows (PowerShell):** JSON values inside double-quoted strings must use `\"` escaped quotes.
+
+**Windows (PowerShell):**
+```powershell
+# 1. Create a Creator
+curl -X POST http://127.0.0.1:8000/api/creators/ -H "Content-Type: application/json" -d "{\"email\": \"mozart@example.com\", \"display_name\": \"Mozart\"}"
+
+# 2. Create the Library (use the id returned above, e.g. 1)
+curl -X POST http://127.0.0.1:8000/api/libraries/ -H "Content-Type: application/json" -d "{\"creator\": 1}"
+```
+
+**Linux / macOS (bash):**
 ```bash
-# 1. First, create a Creator (assume this returns id: 1)
+# 1. Create a Creator
 curl -X POST http://127.0.0.1:8000/api/creators/ \
      -H "Content-Type: application/json" \
-     -d '{"display_name": "Mozart"}'
+     -d '{"email": "mozart@example.com", "display_name": "Mozart"}'
 
-# 2. Next, create the Library attached to that creator
+# 2. Create the Library (use the id returned above, e.g. 1)
 curl -X POST http://127.0.0.1:8000/api/libraries/ \
      -H "Content-Type: application/json" \
      -d '{"creator": 1}'
