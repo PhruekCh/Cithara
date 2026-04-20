@@ -120,6 +120,22 @@ Mock mode returns `SUCCESS` immediately with placeholder audio URLs.
 | `/api/libraries/`                    | GET    | List all libraries (CRUD)              |
 | `/api/listeners/`                    | GET    | List all listeners (CRUD)              |
 
+### Usage Example: Creating a Library
+
+To use the `/api/generate/` endpoint, you must first have a `Library` to store the generated songs. Because a `Library` has a 1-to-1 relationship with a `Creator`, you must pass an existing creator's ID:
+
+```bash
+# 1. First, create a Creator (assume this returns id: 1)
+curl -X POST http://127.0.0.1:8000/api/creators/ \
+     -H "Content-Type: application/json" \
+     -d '{"display_name": "Mozart"}'
+
+# 2. Next, create the Library attached to that creator
+curl -X POST http://127.0.0.1:8000/api/libraries/ \
+     -H "Content-Type: application/json" \
+     -d '{"creator": 1}'
+```
+
 ### Where to Put the Suno API Key
 
 - Store it in the `.env` file at the project root (never committed)
