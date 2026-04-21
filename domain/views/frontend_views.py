@@ -1,0 +1,100 @@
+"""
+Template-serving views for the Cithara frontend.
+
+These views render HTML pages and ensure each authenticated user
+has a Creator + Library record (auto-created on first visit).
+"""
+
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+
+from domain.models import Creator, Library, Song
+
+
+# ─── Helpers ──────────────────────────────────────────────────────
+
+def _ensure_creator_and_library(user):
+    """
+    Given a Django auth user, ensure they have a matching
+    Creator + Library.  Returns (creator, library).
+    """
+    try:
+        creator = Creator.objects.get(email=user.email)
+    except Creator.DoesNotExist:
+        creator = Creator.objects.create(
+            email=user.email,
+            display_name=user.get_full_name() or user.username or user.email,
+        )
+
+    # Ensure the Creator has a Library
+    library, _ = Library.objects.get_or_create(creator=creator)
+    return creator, library
+
+
+# ─── Pages ────────────────────────────────────────────────────────
+
+def login_view(request):
+    """Render login page; handle fallback form POST."""
+    if request.user.is_authenticated:
+        return redirect('/library/')
+
+    error = None
+    if request.method == 'POST':
+        username = request.POST.get('username', '')
+        password = request.POST.get('password', '')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('/library/')
+        else:
+            error = 'Invalid username or password.'
+
+    return render(request, 'domain/login.html', {'error': error})
+
+
+def logout_view(request):
+    """Log out and redirect to login."""
+    logout(request)
+    return redirect('/login/')
+
+
+@login_required
+def library_view(request):
+    """My Library — lists the user's songs."""
+    creator, library = _ensure_creator_and_library(request.user)
+    song_count = Song.objects.filter(library=library, is_deleted=False).count()
+    return render(request, 'domain/library.html', {
+        'library_id': library.pk,
+        'song_count': song_count,
+    })
+
+
+@login_required
+def studio_view(request):
+    """Creation Studio — generate a new song."""
+    creator, library = _ensure_creator_and_library(request.user)
+    return render(request, 'domain/studio.html', {
+        'library_id': library.pk,
+    })
+
+
+def song_detail_view(request, song_id):
+    """
+    Song detail / shared song page.
+    Accessible to all authenticated users (FR-15: login to listen).
+    """
+    if not request.user.is_authenticated:
+        return redirect(f'/login/?next=/song/{song_id}/')
+
+    song = get_object_or_404(Song, pk=song_id)
+    return render(request, 'domain/player.html', {
+        'song': song,
+    })
+
+
+def home_redirect(request):
+    """Redirect root to library (or login)."""
+    if request.user.is_authenticated:
+        return redirect('/library/')
+    return redirect('/login/')

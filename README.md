@@ -1,16 +1,33 @@
 # Cithara – AI Music Generation Platform
 
-## Setup
+## Setup & Running the Frontend
+
 ```bash
-python -m venv venv && source venv/bin/activate   # Windows: .\venv\Scripts\activate
+python -m venv venv
+# Activate the virtual environment:
+# Windows: .\venv\Scripts\activate
+# macOS/Linux: source venv/bin/activate
+
 pip install -r requirements.txt
-cp .env.example .env                               # edit .env with your settings
+
+# Create your .env file
+cp .env.example .env
+```
+
+**Configure `.env` settings:**
+- `GENERATOR_STRATEGY`: Set to `mock` for fast offline testing, or `suno` to use the real AI.
+- `SUNO_API_KEY`: Required if using `suno` mode.
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: Required for the Google Single Sign-on. If you skip this, you can still use the fallback Email/Password login.
+
+**Initialize database and run:**
+```bash
 python manage.py migrate
-python manage.py createsuperuser
 python manage.py runserver
 ```
 
-CRUD test: http://127.0.0.1:8000/api/creators/
+**Accessing the Application:**
+Open your browser and navigate to **http://127.0.0.1:8000/**. 
+You will be redirected to the Login page. Once logged in, your backend `Creator` and `Library` records are created automatically and you'll be taken to the Creation Studio.
 
 ---
 

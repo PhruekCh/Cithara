@@ -17,7 +17,30 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from domain.views.frontend_views import (
+    home_redirect,
+    login_view,
+    logout_view,
+    library_view,
+    studio_view,
+    song_detail_view,
+)
+
 urlpatterns = [
+    # Admin
     path('admin/', admin.site.urls),
+
+    # REST API (unchanged)
     path('api/', include('domain.urls')),
+
+    # Google OAuth (allauth)
+    path('accounts/', include('allauth.urls')),
+
+    # Frontend pages
+    path('', home_redirect, name='home'),
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
+    path('library/', library_view, name='library'),
+    path('studio/', studio_view, name='studio'),
+    path('song/<int:song_id>/', song_detail_view, name='song-detail'),
 ]

@@ -43,7 +43,7 @@ class SunoSongGeneratorStrategy(SongGeneratorStrategy):
         Sends a generation request and returns the taskId.
         """
         payload = {
-            "customMode": True,
+            "customMode": False,
             "instrumental": False,
             "model": "V4",
             "prompt": request.get("prompt", ""),

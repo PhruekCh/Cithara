@@ -1,0 +1,116 @@
+{% extends "domain/base.html" %}
+{% block title %}Creation Studio — Cithara{% endblock %}
+{% block nav_studio %}navbar__link--active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Creation Studio</h1>
+  <p>Describe the music you want and let AI create it for you</p>
+</div>
+
+<div class="studio-layout">
+
+  <!-- Left: Generation Form -->
+  <div class="card studio-form-card">
+    <form id="studio-form">
+      {% csrf_token %}
+      <input type="hidden" name="library" value="{{ library_id }}">
+
+      <div class="form-group">
+        <label for="studio-prompt">Prompt</label>
+        <textarea id="studio-prompt" name="prompt" maxlength="1000"
+                  placeholder="Describe the song you want to create…&#10;e.g. A calm piano melody about rain and nostalgia"
+                  required></textarea>
+        <span class="char-counter" id="char-counter">0 / 1000</span>
+      </div>
+
+      <div class="form-group">
+        <label for="studio-title">Song Title</label>
+        <input type="text" id="studio-title" name="title" maxlength="80"
+               placeholder="Give your song a name" required>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label for="studio-genre">Genre</label>
+          <select id="studio-genre" name="genre" required>
+            <option value="">Select genre</option>
+            <option value="rock">Rock</option>
+            <option value="pop">Pop</option>
+            <option value="hiphop">Hip-Hop</option>
+            <option value="jazz">Jazz</option>
+            <option value="country">Country</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="studio-mood">Mood</label>
+          <select id="studio-mood" name="mood" required>
+            <option value="">Select mood</option>
+            <option value="happy">Happy</option>
+            <option value="sad">Sad</option>
+            <option value="energetic">Energetic</option>
+            <option value="calm">Calm</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label for="studio-occasion">Occasion</label>
+          <select id="studio-occasion" name="occasion" required>
+            <option value="">Select occasion</option>
+            <option value="workout">Workout</option>
+            <option value="funeral">Funeral</option>
+            <option value="celebration">Celebration</option>
+            <option value="relaxation">Relaxation</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="studio-style">Style</label>
+          <input type="text" id="studio-style" name="style"
+                 placeholder="e.g. Classical, Lo-fi" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn--primary btn--lg" style="width: 100%;">
+        ✦ Generate Song
+      </button>
+    </form>
+  </div>
+
+  <!-- Right: Progress & Preview -->
+  <div class="card studio-preview-card">
+
+    <!-- Idle state (shown before generation) -->
+    <div id="studio-idle" class="studio-idle">
+      <div class="studio-idle__icon">🎧</div>
+      <p>Fill in the form and click <strong>Generate</strong> to create a new song.</p>
+      <p style="margin-top: 0.5rem; font-size: 0.8rem;">Generation may take a few minutes when using the Suno API.</p>
+    </div>
+
+    <!-- Progress area (shown during generation) -->
+    <div id="progress-area" style="display: none;">
+      <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Generation Progress</h3>
+      <div class="progress-container">
+        <div class="progress-container__label">
+          <span class="progress-container__status" id="progress-status">PENDING</span>
+          <span class="progress-container__timer" id="progress-timer">0:00</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-bar__fill" id="progress-fill" style="width: 0%;"></div>
+        </div>
+        <div class="progress-steps">
+          <span class="progress-steps__step" id="step-PENDING">Pending</span>
+          <span class="progress-steps__step" id="step-TEXT_SUCCESS">Text</span>
+          <span class="progress-steps__step" id="step-FIRST_SUCCESS">First Pass</span>
+          <span class="progress-steps__step" id="step-SUCCESS">Complete</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview area (shown after SUCCESS) -->
+    <div id="preview-area" style="display: none;"></div>
+  </div>
+
+</div>
+{% endblock %}
