@@ -40,7 +40,7 @@ SECRET_KEY = 'django-insecure-8=r^4xhrbh4&mir%p(p*z$)@)3jzhhv1#0@k_w*fyhfg_7i(4q
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -173,3 +173,11 @@ SOCIALACCOUNT_PROVIDERS = {
 # Session auto-logout after 30 minutes of inactivity (FR-02)
 SESSION_COOKIE_AGE = 1800
 SESSION_SAVE_EVERY_REQUEST = True
+
+# ─── CSRF trusted origins (for LAN access from phone/other devices) ──
+# Allows form submissions (login, register, generate) from local network
+CSRF_TRUSTED_ORIGINS = [
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+    'http://192.168.1.110:8000',  # your PC's local IP
+]

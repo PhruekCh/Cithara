@@ -7,6 +7,7 @@ has a Creator + Library record (auto-created on first visit).
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.shortcuts import render, redirect, get_object_or_404
 
 from domain.models import Creator, Library, Song
@@ -33,6 +34,38 @@ def _ensure_creator_and_library(user):
 
 
 # ─── Pages ────────────────────────────────────────────────────────
+
+def register_view(request):
+    """Register a new account using username + email + password."""
+    if request.user.is_authenticated:
+        return redirect('/library/')
+
+    error = None
+    if request.method == 'POST':
+        username  = request.POST.get('username', '').strip()
+        email     = request.POST.get('email', '').strip()
+        password1 = request.POST.get('password1', '')
+        password2 = request.POST.get('password2', '')
+
+        if not username or not email or not password1:
+            error = 'All fields are required.'
+        elif password1 != password2:
+            error = 'Passwords do not match.'
+        elif User.objects.filter(username=username).exists():
+            error = f'Username "{username}" is already taken.'
+        elif User.objects.filter(email=email).exists():
+            error = 'An account with that email already exists.'
+        else:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password1,
+            )
+            login(request, user)
+            return redirect('/library/')
+
+    return render(request, 'domain/register.html', {'error': error})
+
 
 def login_view(request):
     """Render login page; handle fallback form POST."""
