@@ -17,7 +17,28 @@ cp .env.example .env
 **Configure `.env` settings:**
 - `GENERATOR_STRATEGY`: Set to `mock` for fast offline testing, or `suno` to use the real AI.
 - `SUNO_API_KEY`: Required if using `suno` mode.
-- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: Required for the Google Single Sign-on. If you skip this, you can still use the fallback Email/Password login.
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: Required for Google Single Sign-On (see below). If you skip this, you can still use the fallback Email/Password login at `/register/`.
+
+### Google OAuth 2.0 Setup (Optional)
+
+To enable "Sign in with Google":
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project (or select an existing one)
+3. Navigate to **APIs & Services → Credentials**
+4. Click **Create Credentials → OAuth client ID**
+5. Select **Web application** as the application type
+6. Under **Authorized redirect URIs**, add:
+   ```
+   http://127.0.0.1:8000/accounts/google/login/callback/
+   ```
+7. Copy the **Client ID** and **Client Secret** into your `.env` file:
+   ```env
+   GOOGLE_CLIENT_ID=123456789-abcdef.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=GOCSPX-your-secret-here
+   ```
+
+> **Note:** Google OAuth is entirely optional. You can register and log in with a local email/password at `/register/` without any Google credentials configured.
 
 **Initialize database and run:**
 ```bash
@@ -26,7 +47,7 @@ python manage.py runserver
 ```
 
 **Accessing the Application:**
-Open your browser and navigate to **http://127.0.0.1:8000/**. 
+Open your browser and navigate to **http://127.0.0.1:8000/**.
 You will be redirected to the Login page. Once logged in, your backend `Creator` and `Library` records are created automatically and you'll be taken to the Creation Studio.
 
 ---
