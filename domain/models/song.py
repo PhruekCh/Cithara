@@ -25,6 +25,22 @@ class Song(models.Model):
         null=True,
         help_text="URL of the generated audio file.",
     )
+    prompt         = models.TextField(
+        blank=True,
+        default='',
+        help_text="Original prompt used for generation (stored for regeneration).",
+    )
+    style          = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        help_text="Original style used for generation (stored for regeneration).",
+    )
+    rating         = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="User rating from 1 to 5 stars.",
+    )
     date_generated = models.DateTimeField(auto_now_add=True)
     is_deleted     = models.BooleanField(
         default=False,

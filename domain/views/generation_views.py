@@ -40,6 +40,8 @@ class GenerateSongView(APIView):
             genre=data['genre'],
             mood=data['mood'],
             occasion=data['occasion'],
+            prompt=data['prompt'],
+            style=data['style'],
         )
 
         # Delegate to the active strategy
@@ -53,6 +55,7 @@ class GenerateSongView(APIView):
         try:
             result = generator.generate(gen_request)
         except Exception as exc:
+            song.delete()  # Clean up the shell song
             return Response(
                 {"error": str(exc)},
                 status=status.HTTP_502_BAD_GATEWAY,
@@ -130,6 +133,8 @@ class GenerationStatusView(APIView):
         if result.get('error_message'):
             job.error_message = result['error_message']
             job.status = 'FAILED'
+            job.song.is_deleted = True
+            job.song.save()
 
         if result.get('status') == 'SUCCESS' and result.get('data'):
             suno_data = result['data'].get('sunoData', [])

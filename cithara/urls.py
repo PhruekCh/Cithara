@@ -25,6 +25,7 @@ from domain.views.frontend_views import (
     library_view,
     studio_view,
     song_detail_view,
+    download_song_view,
 )
 
 urlpatterns = [
@@ -45,4 +46,5 @@ urlpatterns = [
     path('library/', library_view, name='library'),
     path('studio/', studio_view, name='studio'),
     path('song/<int:song_id>/', song_detail_view, name='song-detail'),
+    path('song/<int:song_id>/download/', download_song_view, name='song-download'),
 ]

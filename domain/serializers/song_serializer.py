@@ -15,6 +15,9 @@ class SongSerializer(serializers.ModelSerializer):
             'mood',
             'occasion',
             'audio_url',
+            'prompt',
+            'style',
+            'rating',
             'date_generated',
             'is_deleted',
         ]

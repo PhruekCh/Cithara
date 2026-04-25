@@ -19,11 +19,29 @@
     {% if song.duration %} · {{ song.duration|floatformat:0 }}s{% endif %}
   </p>
 
-  <!-- Audio Player -->
+  <!-- Star Rating (FR-16) -->
+  <div class="song-detail__rating" id="rating-widget" data-song-id="{{ song.id }}" data-current-rating="{{ song.rating|default:0 }}">
+    <span class="song-detail__rating-label">Rate this song</span>
+    <div class="star-rating" id="star-container">
+      {% for i in "12345" %}
+      <button class="star-rating__star" data-value="{{ i }}" title="{{ i }} star{{ i|pluralize }}">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Audio Player with Waveform -->
   <div class="card song-detail__player-card">
     <div class="song-detail__inline-player" id="detail-player"
          data-audio-url="{{ song.audio_url|default:'' }}"
-         data-title="{{ song.title }}">
+         data-title="{{ song.title }}"
+         data-song-id="{{ song.id }}">
+
+      <!-- Waveform Visualization Canvas -->
+      <canvas class="waveform-canvas" id="waveform-canvas"></canvas>
 
       <div class="song-detail__controls">
         <button class="player__play-btn" id="detail-play-btn" style="width: 56px; height: 56px;">
@@ -41,13 +59,17 @@
 
   <!-- Actions -->
   <div class="song-detail__actions">
-    <button class="btn btn--primary" onclick="downloadSong('{{ song.audio_url|default:'' }}', '{{ song.title }}')">
+    <button class="btn btn--primary" onclick="downloadSong({{ song.id }}, '{{ song.title }}')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4m4-5l5 5 5-5m-5 5V3"/></svg>
       Download
     </button>
     <button class="btn btn--ghost" onclick="shareSong({{ song.id }})">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
       Share
+    </button>
+    <button class="btn btn--ghost" onclick="regenerateSong({{ song.id }})" title="Generate a new song with the same settings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      Regenerate
     </button>
     <a href="/library/" class="btn btn--ghost">← Back to Library</a>
   </div>

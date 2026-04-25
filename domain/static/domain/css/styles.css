@@ -584,6 +584,13 @@ body::before {
   overflow: hidden;
 }
 
+.song-card__link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
 .song-card__header {
   display: flex;
   justify-content: space-between;
@@ -984,7 +991,47 @@ body.player-active { padding-bottom: var(--player-height); }
 .song-detail__meta {
   color: var(--text-muted);
   font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Star Rating Widget (FR-16) */
+.song-detail__rating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
   margin-bottom: 2rem;
+}
+
+.song-detail__rating-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.star-rating {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.star-rating__star {
+  background: none;
+  border: none;
+  padding: 0.15rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: transform var(--duration) var(--ease-out), color var(--duration);
+  border-radius: 4px;
+}
+
+.star-rating__star:hover {
+  transform: scale(1.2);
+}
+
+.star-rating__star:active {
+  transform: scale(0.95);
 }
 
 .song-detail__player-card {
@@ -1015,6 +1062,16 @@ body.player-active { padding-bottom: var(--player-height); }
   display: flex;
   justify-content: center;
   gap: 1rem;
+}
+
+/* Waveform Visualization Canvas */
+.waveform-canvas {
+  width: 100%;
+  height: 80px;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.2);
+  margin-bottom: 1rem;
+  display: block;
 }
 
 /* ═══════════════════════════════════════════════════════════════════

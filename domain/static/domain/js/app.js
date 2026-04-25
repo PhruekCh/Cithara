@@ -131,29 +131,28 @@ function renderSongGrid() {
 
   grid.innerHTML = page.map(song => `
     <div class="card song-card" id="song-${song.id}">
-      <div class="song-card__header">
-        <span class="song-card__title">${esc(song.title)}</span>
-        <span class="song-card__date">${fmtDate(song.date_generated)}</span>
-      </div>
-      <div class="song-card__badges">
-        <span class="badge badge--genre">${esc(song.genre)}</span>
-        <span class="badge badge--mood">${esc(song.mood)}</span>
-        <span class="badge badge--occasion">${esc(song.occasion)}</span>
-      </div>
-      <div class="song-card__meta">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-        </svg>
-        ${fmtDuration(song.duration)}
-      </div>
+      <a href="/song/${song.id}/" class="song-card__link">
+        <div class="song-card__header">
+          <span class="song-card__title">${esc(song.title)}</span>
+          <span class="song-card__date">${fmtDate(song.date_generated)}</span>
+        </div>
+        <div class="song-card__badges">
+          <span class="badge badge--genre">${esc(song.genre)}</span>
+          <span class="badge badge--mood">${esc(song.mood)}</span>
+          <span class="badge badge--occasion">${esc(song.occasion)}</span>
+        </div>
+        <div class="song-card__meta">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+          </svg>
+          ${fmtDuration(song.duration)}
+        </div>
+      </a>
       <div class="song-card__actions">
         <button class="song-card__play-btn" title="Play" onclick="playSong(${song.id}, '${esc(song.audio_url || '')}', '${esc(song.title)}')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
         </button>
-        <a href="/song/${song.id}/" class="btn btn--icon btn--ghost" title="Details">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
-        </a>
-        <button class="btn btn--icon btn--ghost" title="Download" onclick="downloadSong('${esc(song.audio_url || '')}', '${esc(song.title)}')">
+        <button class="btn btn--icon btn--ghost" title="Download" onclick="downloadSong(${song.id}, '${esc(song.title)}')">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4m4-5l5 5 5-5m-5 5V3"/></svg>
         </button>
         <button class="btn btn--icon btn--ghost" title="Share" onclick="shareSong(${song.id})">
@@ -208,7 +207,14 @@ function shareSong(id) {
   );
 }
 
-function downloadSong(url, title) {
+function downloadSong(songIdOrUrl, title) {
+  // If a numeric song ID is passed, use the server-side download endpoint
+  if (typeof songIdOrUrl === 'number' || /^\d+$/.test(songIdOrUrl)) {
+    window.location.href = `/song/${songIdOrUrl}/download/`;
+    return;
+  }
+  // Fallback: direct URL download (for sticky player)
+  const url = songIdOrUrl;
   if (!url || url.includes('example.com')) {
     showToast('No audio file available (mock mode)', 'info');
     return;
@@ -302,21 +308,119 @@ function updatePlayerProgress() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  SONG DETAIL PAGE PLAYER
+//  SONG DETAIL PAGE PLAYER  +  WAVEFORM VISUALIZATION
 // ═══════════════════════════════════════════════════════════════════
+let waveformCtx = null;   // AudioContext for Web Audio API
+let waveformAnim = null;  // requestAnimationFrame handle
+
 function initDetailPlayer() {
   const container = document.getElementById('detail-player');
   if (!container) return;
 
   const url   = container.dataset.audioUrl || '';
   const title = container.dataset.title || '';
-  const detailAudio = new Audio(url);
+  const songId = container.dataset.songId || '';
+  const detailAudio = new Audio();
+  detailAudio.src = url;
 
   const playBtn = document.getElementById('detail-play-btn');
   const seekBar = document.getElementById('detail-seek');
   const curTime = document.getElementById('detail-current');
   const durTime = document.getElementById('detail-duration');
+  const canvas  = document.getElementById('waveform-canvas');
 
+  // ── Waveform Animation Setup ──
+  function drawWaveform() {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+
+    function render() {
+      waveformAnim = requestAnimationFrame(render);
+      ctx.clearRect(0, 0, W, H);
+
+      const barCount = 64;
+      const barWidth = W / barCount;
+      const time = Date.now() / 150; // Speed of the animation
+
+      for (let i = 0; i < barCount; i++) {
+        // Procedural dancing effect using sine waves and time
+        const noise1 = Math.sin(i * 0.5 + time) * 0.5 + 0.5;
+        const noise2 = Math.cos(i * 0.3 - time * 0.8) * 0.5 + 0.5;
+        
+        // Shape it so the middle tends to be higher, edges lower
+        const distFromCenter = Math.abs((barCount / 2) - i) / (barCount / 2);
+        const envelope = 1 - Math.pow(distFromCenter, 2);
+        
+        const value = ((noise1 + noise2) / 2) * envelope;
+        const barHeight = Math.max(4, value * H * 0.85);
+
+        // Gradient from accent to accent-light
+        const pct = i / barCount;
+        const r = Math.round(124 + pct * 44);
+        const g = Math.round(58  + pct * 27);
+        const b = Math.round(237 + pct * 10);
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.85)`;
+
+        const x = i * barWidth;
+        const radius = barWidth * 0.3;
+        ctx.beginPath();
+        ctx.roundRect(x + 1, H - barHeight, barWidth - 2, barHeight, [radius, radius, 0, 0]);
+        ctx.fill();
+      }
+    }
+    render();
+  }
+
+  function drawIdleWaveform() {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const barCount = 64;
+    const barWidth = W / barCount;
+
+    for (let i = 0; i < barCount; i++) {
+      // Gentle sine-wave idle pattern
+      const barHeight = 4 + Math.sin(i * 0.3) * 3 + Math.random() * 2;
+      const pct = i / barCount;
+      ctx.fillStyle = `rgba(${124 + pct * 44}, ${58 + pct * 27}, 237, 0.3)`;
+      ctx.beginPath();
+      ctx.roundRect(i * barWidth + 1, H - barHeight, barWidth - 2, barHeight, [2, 2, 0, 0]);
+      ctx.fill();
+    }
+  }
+
+  function stopWaveform() {
+    if (waveformAnim) {
+      cancelAnimationFrame(waveformAnim);
+      waveformAnim = null;
+    }
+    drawIdleWaveform();
+  }
+
+  // Set canvas dimensions
+  if (canvas) {
+    const resizeCanvas = () => {
+      canvas.width  = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    drawIdleWaveform();
+  }
+
+  const PLAY_ICON  = '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+  const PAUSE_ICON = '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+
+  // ── Standard player events ──
   detailAudio.addEventListener('loadedmetadata', () => {
     if (durTime) durTime.textContent = fmtDuration(Math.floor(detailAudio.duration));
   });
@@ -329,24 +433,34 @@ function initDetailPlayer() {
   });
 
   detailAudio.addEventListener('ended', () => {
-    if (playBtn) playBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+    if (playBtn) playBtn.innerHTML = PLAY_ICON;
+    stopWaveform();
   });
 
   detailAudio.addEventListener('error', () => {
-    showToast('Cannot play this audio (mock URL or unavailable)', 'info');
+    if (playBtn) playBtn.innerHTML = PLAY_ICON;
+    stopWaveform();
   });
 
   if (playBtn) {
     playBtn.addEventListener('click', () => {
       if (detailAudio.paused) {
-        if (!url || url.includes('example.com')) {
-          showToast('Mock mode — no real audio to play', 'info');
+        const isMockUrl = !url || url.includes('example.com');
+        if (isMockUrl) {
+          showToast('Mock mode — no real audio available for playback', 'info');
+          return;
         }
-        detailAudio.play().catch(() => {});
-        playBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>';
+        detailAudio.play().then(() => {
+          playBtn.innerHTML = PAUSE_ICON;
+          drawWaveform();
+        }).catch(() => {
+          showToast('Audio failed to load', 'error');
+          playBtn.innerHTML = PLAY_ICON;
+        });
       } else {
         detailAudio.pause();
-        playBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+        playBtn.innerHTML = PLAY_ICON;
+        stopWaveform();
       }
     });
   }
@@ -379,6 +493,29 @@ function initStudio() {
       counter.textContent = `${len} / 1000`;
       counter.className = 'char-counter' + (len > 900 ? (len >= 1000 ? ' char-counter--max' : ' char-counter--warn') : '');
     });
+  }
+
+  // UC-08: Prefill form from query params (Regenerate flow)
+  const params = new URLSearchParams(window.location.search);
+  const fieldMap = {
+    prompt:   'studio-prompt',
+    title:    'studio-title',
+    genre:    'studio-genre',
+    mood:     'studio-mood',
+    occasion: 'studio-occasion',
+    style:    'studio-style',
+  };
+  for (const [param, elId] of Object.entries(fieldMap)) {
+    const val = params.get(param);
+    if (val) {
+      const el = document.getElementById(elId);
+      if (el) el.value = val;
+    }
+  }
+  // Update char counter if prompt was prefilled
+  if (params.get('prompt') && prompt && counter) {
+    const len = prompt.value.length;
+    counter.textContent = `${len} / 1000`;
   }
 
   form.addEventListener('submit', async (e) => {
@@ -510,6 +647,82 @@ function showPreview(result) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+//  STAR RATING WIDGET  (FR-16)
+// ═══════════════════════════════════════════════════════════════════
+function initRatingWidget() {
+  const widget = document.getElementById('rating-widget');
+  if (!widget) return;
+
+  const songId = widget.dataset.songId;
+  let currentRating = parseInt(widget.dataset.currentRating) || 0;
+  const stars = widget.querySelectorAll('.star-rating__star');
+
+  function renderStars(rating) {
+    stars.forEach(star => {
+      const val = parseInt(star.dataset.value);
+      const svg = star.querySelector('svg');
+      if (val <= rating) {
+        svg.setAttribute('fill', '#fbbf24');
+        svg.setAttribute('stroke', '#fbbf24');
+      } else {
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+      }
+    });
+  }
+
+  // Initial render
+  renderStars(currentRating);
+
+  // Hover preview
+  stars.forEach(star => {
+    star.addEventListener('mouseenter', () => {
+      renderStars(parseInt(star.dataset.value));
+    });
+  });
+
+  widget.querySelector('.star-rating').addEventListener('mouseleave', () => {
+    renderStars(currentRating);
+  });
+
+  // Click to rate
+  stars.forEach(star => {
+    star.addEventListener('click', async () => {
+      const val = parseInt(star.dataset.value);
+      try {
+        await apiPatch(`/api/songs/${songId}/`, { rating: val });
+        currentRating = val;
+        renderStars(val);
+        showToast(`Rated ${val} star${val > 1 ? 's' : ''}!`, 'success');
+      } catch (e) {
+        showToast('Could not save rating: ' + e.message, 'error');
+      }
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  REGENERATE SONG  (UC-08)
+// ═══════════════════════════════════════════════════════════════════
+async function regenerateSong(songId) {
+  try {
+    const song = await apiGet(`/api/songs/${songId}/`);
+    // Build query params to prefill the studio form
+    const params = new URLSearchParams({
+      prompt:   song.prompt   || '',
+      title:    song.title    || '',
+      genre:    song.genre    || '',
+      mood:     song.mood     || '',
+      occasion: song.occasion || '',
+      style:    song.style    || '',
+    });
+    window.location.href = `/studio/?${params.toString()}`;
+  } catch (e) {
+    showToast('Could not load song data: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
 //  UTILITIES
 // ═══════════════════════════════════════════════════════════════════
 function esc(str) {
@@ -539,4 +752,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initLibrary();
   initStudio();
   initDetailPlayer();
+  initRatingWidget();
 });

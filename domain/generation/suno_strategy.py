@@ -65,7 +65,9 @@ class SunoSongGeneratorStrategy(SongGeneratorStrategy):
         data = body.get("data") or {}
         if isinstance(data, list):
             data = data[0] if data else {}
-        task_id = data.get("taskId", "")
+        task_id = data.get("taskId", "") or data.get("id", "")
+        if not task_id:
+            raise ValueError(f"Suno API did not return a valid task ID. Response: {body}")
 
         return {
             "task_id": task_id,

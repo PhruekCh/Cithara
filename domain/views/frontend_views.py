@@ -61,7 +61,7 @@ def register_view(request):
                 email=email,
                 password=password1,
             )
-            login(request, user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('/library/')
 
     return render(request, 'domain/register.html', {'error': error})
@@ -124,6 +124,45 @@ def song_detail_view(request, song_id):
     return render(request, 'domain/player.html', {
         'song': song,
     })
+
+
+@login_required
+def download_song_view(request, song_id):
+    """
+    Download a song's audio file (FR-13).
+
+    Proxies the audio from its URL and streams it to the browser
+    as a file attachment, avoiding CORS issues with direct downloads.
+    """
+    import requests as http_requests
+    from django.http import HttpResponse
+
+    song = get_object_or_404(Song, pk=song_id)
+
+    if not song.audio_url or 'example.com' in song.audio_url:
+        return HttpResponse(
+            'No audio file available (mock mode).',
+            status=404,
+            content_type='text/plain',
+        )
+
+    try:
+        resp = http_requests.get(song.audio_url, timeout=30, stream=True)
+        resp.raise_for_status()
+    except Exception:
+        return HttpResponse(
+            'Could not fetch the audio file.',
+            status=502,
+            content_type='text/plain',
+        )
+
+    content_type = resp.headers.get('Content-Type', 'audio/mpeg')
+    safe_title = ''.join(c for c in song.title if c.isalnum() or c in ' _-').strip() or 'song'
+    ext = '.mp3' if 'mpeg' in content_type else '.m4a'
+
+    response = HttpResponse(resp.content, content_type=content_type)
+    response['Content-Disposition'] = f'attachment; filename="{safe_title}{ext}"'
+    return response
 
 
 def home_redirect(request):
